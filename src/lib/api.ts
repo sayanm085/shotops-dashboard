@@ -184,6 +184,10 @@ class ApiClient {
     async setDbReadOnly(serverId: string, dbId: string, readOnly: boolean) {
         return this.patch<{ readOnly: boolean; message: string }>(`/servers/${serverId}/databases/${dbId}/readonly`, { readOnly });
     }
+
+    async seedDatabase(serverId: string, dbId: string) {
+        return this.post<{ message: string; jobId: string }>(`/servers/${serverId}/databases/${dbId}/seed`, {});
+    }
 }
 
 export const api = new ApiClient(API_BASE_URL);

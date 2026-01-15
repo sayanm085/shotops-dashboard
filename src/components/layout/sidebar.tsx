@@ -8,6 +8,7 @@ import {
     Box,
     Database,
     Terminal,
+    Activity,
     Settings,
     LogOut,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const navigation = [
     { name: "Servers", href: "/servers", icon: Server },
     { name: "Apps", href: "/apps", icon: Box },
     { name: "Databases", href: "/databases", icon: Database },
+    { name: "Monitoring", href: "/monitoring", icon: Activity },
     { name: "Terminal", href: "/terminal", icon: Terminal },
 ];
 
