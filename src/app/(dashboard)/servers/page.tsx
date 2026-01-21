@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Server, Terminal } from "lucide-react";
+import { Server, Terminal, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -86,7 +86,7 @@ export default function ServersPage() {
                                                         <p className="text-sm text-slate-500">{server.ip}</p>
                                                     </div>
                                                 </div>
-                                                <StatusBadge status={server.status} />
+                                                <StatusBadge isLiveConnected={server.isLiveConnected} status={server.status} />
                                             </div>
                                         </Link>
                                         <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
@@ -109,14 +109,34 @@ export default function ServersPage() {
     );
 }
 
-function StatusBadge({ status }: { status: ServerType["status"] }) {
+function StatusBadge({ isLiveConnected, status }: { isLiveConnected?: boolean; status: ServerType["status"] }) {
+    // TRUTH: isLiveConnected is the single source of truth
+    // If isLiveConnected is available, use it. Otherwise fall back to status.
+    if (isLiveConnected === true) {
+        return (
+            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                Online
+            </Badge>
+        );
+    }
+
+    if (isLiveConnected === false) {
+        return (
+            <Badge variant="secondary" className="bg-red-100 text-red-700">
+                <WifiOff className="h-3 w-3 mr-1" />
+                Offline
+            </Badge>
+        );
+    }
+
+    // Fallback for cases where isLiveConnected is not provided
     const variants: Record<string, { label: string; className: string }> = {
         connected: { label: "Online", className: "bg-green-100 text-green-700" },
         CONNECTED: { label: "Online", className: "bg-green-100 text-green-700" },
         pending: { label: "Connecting", className: "bg-yellow-100 text-yellow-700" },
         PENDING: { label: "Connecting", className: "bg-yellow-100 text-yellow-700" },
-        disconnected: { label: "Offline", className: "bg-slate-100 text-slate-700" },
-        DISCONNECTED: { label: "Offline", className: "bg-slate-100 text-slate-700" },
+        disconnected: { label: "Offline", className: "bg-red-100 text-red-700" },
+        DISCONNECTED: { label: "Offline", className: "bg-red-100 text-red-700" },
         UNCLAIMED: { label: "Unclaimed", className: "bg-purple-100 text-purple-700" },
         error: { label: "Error", className: "bg-red-100 text-red-700" },
         ERROR: { label: "Error", className: "bg-red-100 text-red-700" },

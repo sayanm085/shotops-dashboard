@@ -135,7 +135,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
-                                                <StatusBadge status={server.status} />
+                                                <StatusBadge status={server.status} isLiveConnected={server.isLiveConnected} />
                                                 <span className="text-sm text-slate-500">
                                                     {formatRelativeTime(server.createdAt)}
                                                 </span>
@@ -160,22 +160,42 @@ export default function DashboardPage() {
     );
 }
 
-function StatusBadge({ status }: { status: ServerType["status"] }) {
-    const variants: Record<
-        ServerType["status"],
-        { label: string; className: string }
-    > = {
+function StatusBadge({ status, isLiveConnected }: { status: ServerType["status"]; isLiveConnected?: boolean }) {
+    // TRUTH: Use isLiveConnected if available
+    if (isLiveConnected === true) {
+        return (
+            <Badge variant="secondary" className="bg-green-100 text-green-700">
+                Online
+            </Badge>
+        );
+    }
+
+    if (isLiveConnected === false) {
+        return (
+            <Badge variant="secondary" className="bg-red-100 text-red-700">
+                Offline
+            </Badge>
+        );
+    }
+
+    // Fallback for cases where isLiveConnected is not provided
+    const variants: Record<string, { label: string; className: string }> = {
         connected: { label: "Online", className: "bg-green-100 text-green-700" },
+        CONNECTED: { label: "Online", className: "bg-green-100 text-green-700" },
         pending: { label: "Connecting", className: "bg-yellow-100 text-yellow-700" },
-        disconnected: { label: "Offline", className: "bg-slate-100 text-slate-700" },
+        PENDING: { label: "Connecting", className: "bg-yellow-100 text-yellow-700" },
+        disconnected: { label: "Offline", className: "bg-red-100 text-red-700" },
+        DISCONNECTED: { label: "Offline", className: "bg-red-100 text-red-700" },
+        UNCLAIMED: { label: "Unclaimed", className: "bg-purple-100 text-purple-700" },
         error: { label: "Error", className: "bg-red-100 text-red-700" },
+        ERROR: { label: "Error", className: "bg-red-100 text-red-700" },
     };
 
-    const { label, className } = variants[status];
+    const variant = variants[status] || { label: "Unknown", className: "bg-slate-100 text-slate-700" };
 
     return (
-        <Badge variant="secondary" className={className}>
-            {label}
+        <Badge variant="secondary" className={variant.className}>
+            {variant.label}
         </Badge>
     );
 }

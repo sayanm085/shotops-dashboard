@@ -15,7 +15,7 @@ import {
 import {
     Cpu, MemoryStick, HardDrive, Network, Server as ServerIcon, Activity,
     RefreshCw, TrendingUp, TrendingDown, Minus, AlertTriangle, AlertCircle,
-    CheckCircle, Clock, Zap, ArrowUp, ArrowDown, Flame
+    CheckCircle, Clock, Zap, ArrowUp, ArrowDown, Flame, WifiOff
 } from "lucide-react";
 import { api, type Server } from "@/lib/api";
 import {
@@ -193,8 +193,8 @@ function MetricGauge({
                     {/* Current value */}
                     <div
                         className={`absolute h-full transition-all duration-500 ${state === "CRITICAL" ? "bg-red-500" :
-                                state === "SATURATED" ? "bg-orange-500" :
-                                    state === "ELEVATED" ? "bg-amber-500" : "bg-emerald-500"
+                            state === "SATURATED" ? "bg-orange-500" :
+                                state === "ELEVATED" ? "bg-amber-500" : "bg-emerald-500"
                             }`}
                         style={{ width: `${percentage}%` }}
                     />
@@ -347,11 +347,12 @@ export default function MonitoringPage() {
         queryFn: () => api.getServers(),
     });
 
-    // Auto-select first connected server
+    // Auto-select first LIVE connected server
     useEffect(() => {
         if (servers.length > 0 && !selectedServer) {
-            const connected = servers.find((s: Server) => s.status === "CONNECTED" || s.status === "connected");
-            setSelectedServer(connected?.id || servers[0].id);
+            // TRUTH: Use isLiveConnected instead of status
+            const live = servers.find((s: Server) => s.isLiveConnected === true);
+            setSelectedServer(live?.id || servers[0].id);
         }
     }, [servers, selectedServer]);
 
@@ -414,6 +415,8 @@ export default function MonitoringPage() {
     })) || [];
 
     const selectedServerData = servers.find(s => s.id === selectedServer);
+    // TRUTH: Check if the selected server's agent is LIVE connected
+    const isSelectedServerLive = selectedServerData?.isLiveConnected === true;
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -435,10 +438,12 @@ export default function MonitoringPage() {
                                     {servers.map(server => (
                                         <SelectItem key={server.id} value={server.id} className="text-slate-200">
                                             <div className="flex items-center gap-2">
-                                                <div className={`h-2 w-2 rounded-full ${server.status === "CONNECTED" || server.status === "connected"
-                                                        ? "bg-emerald-500" : "bg-slate-500"
+                                                {/* TRUTH: Use isLiveConnected for status indicator */}
+                                                <div className={`h-2 w-2 rounded-full ${server.isLiveConnected === true
+                                                    ? "bg-emerald-500" : "bg-red-500"
                                                     }`} />
                                                 {server.name || server.hostname}
+                                                {server.isLiveConnected === false && <span className="text-red-400 text-xs">(offline)</span>}
                                             </div>
                                         </SelectItem>
                                     ))}
@@ -476,7 +481,19 @@ export default function MonitoringPage() {
 
             {/* Main Content */}
             <div className="max-w-[1800px] mx-auto px-6 py-6">
-                {!currentMetrics ? (
+                {/* TRUTH: Show offline message when agent is not live connected */}
+                {selectedServerData && !isSelectedServerLive ? (
+                    <div className="flex items-center justify-center h-[60vh]">
+                        <div className="text-center">
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <WifiOff className="h-10 w-10 text-red-400" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-slate-200 mb-2">No Live Data Available</h2>
+                            <p className="text-slate-400 max-w-md">Agent disconnected. Monitoring requires an active agent connection.</p>
+                            <p className="text-slate-500 text-sm mt-4">Last seen: {selectedServerData?.lastSeenAt ? new Date(selectedServerData.lastSeenAt).toLocaleString() : 'Unknown'}</p>
+                        </div>
+                    </div>
+                ) : !currentMetrics ? (
                     <div className="flex items-center justify-center h-[60vh]">
                         <div className="text-center">
                             <Activity className="h-12 w-12 mx-auto text-slate-600 mb-4 animate-pulse" />
@@ -581,8 +598,8 @@ export default function MonitoringPage() {
                                                 {item.label}
                                             </div>
                                             <span className={`text-xl font-mono font-bold ${getState(item.value) === "CRITICAL" ? "text-red-400" :
-                                                    getState(item.value) === "SATURATED" ? "text-orange-400" :
-                                                        getState(item.value) === "ELEVATED" ? "text-amber-400" : "text-emerald-400"
+                                                getState(item.value) === "SATURATED" ? "text-orange-400" :
+                                                    getState(item.value) === "ELEVATED" ? "text-amber-400" : "text-emerald-400"
                                                 }`}>
                                                 {item.value.toFixed(1)}%
                                             </span>

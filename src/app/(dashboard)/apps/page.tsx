@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Box, Plus, Globe } from "lucide-react";
+import { Box, Plus, Globe, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { formatRelativeTime } from "@/lib/utils";
 interface AppWithServer extends App {
     serverId: string;
     serverName: string;
+    isServerLive?: boolean;  // TRUTH: Is the server's agent currently connected?
 }
 
 export default function AppsPage() {
@@ -32,6 +33,8 @@ export default function AppsPage() {
                         ...app,
                         serverId: server.id,
                         serverName: server.name,
+                        // TRUTH: Include live connection status
+                        isServerLive: server.isLiveConnected === true,
                     }));
                 } catch {
                     return [];
@@ -43,8 +46,9 @@ export default function AppsPage() {
         enabled: servers.length > 0,
     });
 
-    const connectedServers = servers.filter(
-        (s) => s.status === "CONNECTED" || s.status === "connected"
+    // TRUTH: Only show live-connected servers for deployment
+    const liveServers = servers.filter(
+        (s) => s.isLiveConnected === true
     );
 
     const statusColors: Record<string, string> = {
@@ -66,7 +70,7 @@ export default function AppsPage() {
                 title="Apps"
                 description="Deploy and manage your applications"
                 actions={
-                    connectedServers.length > 0 && (
+                    liveServers.length > 0 && (
                         <Button asChild>
                             <Link href="/apps/new">
                                 <Plus className="h-4 w-4 mr-2" />
@@ -89,12 +93,12 @@ export default function AppsPage() {
                             <Box className="mx-auto h-12 w-12 text-slate-300" />
                             <h3 className="mt-4 font-medium text-slate-900">No apps yet</h3>
                             <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-                                {connectedServers.length === 0
-                                    ? "Connect a server first, then deploy your applications"
+                                {liveServers.length === 0
+                                    ? "No servers online. Connect an agent to deploy applications."
                                     : "Deploy your first application to get started"}
                             </p>
                             <Button className="mt-4" asChild>
-                                {connectedServers.length === 0 ? (
+                                {liveServers.length === 0 ? (
                                     <Link href="/servers">Go to Servers</Link>
                                 ) : (
                                     <Link href="/apps/new">Deploy App</Link>
@@ -129,6 +133,13 @@ export default function AppsPage() {
                                             >
                                                 {app.status}
                                             </Badge>
+                                            {/* TRUTH: Show offline badge if server is not live connected */}
+                                            {app.isServerLive === false && (
+                                                <Badge variant="destructive" className="text-xs">
+                                                    <WifiOff className="h-3 w-3 mr-1" />
+                                                    Offline
+                                                </Badge>
+                                            )}
                                         </div>
 
                                         <div className="mt-4 flex items-center justify-between text-sm text-slate-500">

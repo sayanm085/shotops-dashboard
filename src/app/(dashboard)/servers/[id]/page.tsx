@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Server, Terminal, Trash2, RefreshCw, HardDrive, Cpu, MemoryStick, Globe, Clock, Box } from "lucide-react";
+import { Server, Terminal, Trash2, RefreshCw, HardDrive, Cpu, MemoryStick, Globe, Clock, Box, WifiOff, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/layout/header";
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ServerDetailPage() {
     const params = useParams();
@@ -168,6 +169,42 @@ export default function ServerDetailPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* RECONNECTION GUIDE: Show when server is offline */}
+                {(server.status === "DISCONNECTED" || server.status === "disconnected" || server.isLiveConnected === false) && (
+                    <Alert variant="destructive" className="border-red-300 bg-red-50">
+                        <WifiOff className="h-5 w-5" />
+                        <AlertTitle className="text-red-800">Server Offline - Agent Disconnected</AlertTitle>
+                        <AlertDescription className="text-red-700 space-y-3">
+                            <p>This server's agent is not connected. To reconnect:</p>
+
+                            <div className="bg-white border border-red-200 rounded-lg p-4 space-y-3">
+                                <div>
+                                    <p className="font-semibold text-slate-800 mb-1">Option 1: Restart the agent (if already installed)</p>
+                                    <code className="block bg-slate-100 text-slate-800 px-3 py-2 rounded text-sm">
+                                        sudo systemctl restart shotops-agent
+                                    </code>
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold text-slate-800 mb-1">Option 2: Reinstall the agent</p>
+                                    <code className="block bg-slate-100 text-slate-800 px-3 py-2 rounded text-sm">
+                                        curl -fsSL {process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/install | sudo bash
+                                    </code>
+                                </div>
+
+                                <div>
+                                    <p className="font-semibold text-slate-800 mb-1">Option 3: Check agent logs</p>
+                                    <code className="block bg-slate-100 text-slate-800 px-3 py-2 rounded text-sm">
+                                        sudo journalctl -u shotops-agent -f
+                                    </code>
+                                </div>
+                            </div>
+
+                            <p className="text-sm">Last seen: {server.lastSeenAt ? formatRelativeTime(server.lastSeenAt) : "Never"}</p>
+                        </AlertDescription>
+                    </Alert>
+                )}
 
                 {/* Apps Section */}
                 <Card>

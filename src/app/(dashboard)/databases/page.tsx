@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Database, Plus, Server, Trash2, ExternalLink, Loader2, AlertTriangle, MoreVertical, StopCircle, PlayCircle, RefreshCw, Settings } from "lucide-react";
+import { Database, Plus, Server, Trash2, ExternalLink, Loader2, AlertTriangle, MoreVertical, StopCircle, PlayCircle, RefreshCw, Settings, WifiOff } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -254,6 +254,9 @@ export default function DatabasesPage() {
                                 const dbConfig = DB_ICONS[db.type.toLowerCase()] || DB_ICONS.postgresql;
                                 const statusConfig = STATUS_CONFIG[db.status.toLowerCase()] || STATUS_CONFIG.error;
                                 const isDeleting = deletingId === db.id;
+                                // TRUTH: Check if this server is live-connected
+                                const serverData = servers.find(s => s.id === serverId);
+                                const isServerLive = serverData?.isLiveConnected === true;
 
                                 return (
                                     <Card
@@ -273,6 +276,13 @@ export default function DatabasesPage() {
                                                 </Link>
                                                 <div className="flex items-center gap-2">
                                                     <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
+                                                    {/* TRUTH: Show offline badge if server is not live connected */}
+                                                    {!isServerLive && (
+                                                        <Badge variant="destructive" className="text-xs">
+                                                            <WifiOff className="h-3 w-3 mr-1" />
+                                                            Offline
+                                                        </Badge>
+                                                    )}
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -288,11 +298,13 @@ export default function DatabasesPage() {
                                                             </DropdownMenuItem>
                                                             {db.status.toLowerCase() === 'running' ? (
                                                                 <DropdownMenuItem
-                                                                    className="text-amber-600"
-                                                                    disabled={stoppingId === db.id}
+                                                                    className={isServerLive ? "text-amber-600" : "text-slate-400"}
+                                                                    disabled={stoppingId === db.id || !isServerLive}
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        stopMutation.mutate({ serverId, dbId: db.id });
+                                                                        if (isServerLive) {
+                                                                            stopMutation.mutate({ serverId, dbId: db.id });
+                                                                        }
                                                                     }}
                                                                 >
                                                                     {stoppingId === db.id ? (
@@ -300,15 +312,17 @@ export default function DatabasesPage() {
                                                                     ) : (
                                                                         <StopCircle className="h-4 w-4 mr-2" />
                                                                     )}
-                                                                    {stoppingId === db.id ? 'Stopping...' : 'Stop'}
+                                                                    {!isServerLive ? 'Agent Offline' : stoppingId === db.id ? 'Stopping...' : 'Stop'}
                                                                 </DropdownMenuItem>
                                                             ) : (
                                                                 <DropdownMenuItem
-                                                                    className="text-emerald-600"
-                                                                    disabled={startingId === db.id}
+                                                                    className={isServerLive ? "text-emerald-600" : "text-slate-400"}
+                                                                    disabled={startingId === db.id || !isServerLive}
                                                                     onClick={(e) => {
                                                                         e.preventDefault();
-                                                                        startMutation.mutate({ serverId, dbId: db.id });
+                                                                        if (isServerLive) {
+                                                                            startMutation.mutate({ serverId, dbId: db.id });
+                                                                        }
                                                                     }}
                                                                 >
                                                                     {startingId === db.id ? (
@@ -316,7 +330,7 @@ export default function DatabasesPage() {
                                                                     ) : (
                                                                         <PlayCircle className="h-4 w-4 mr-2" />
                                                                     )}
-                                                                    {startingId === db.id ? 'Starting...' : 'Start'}
+                                                                    {!isServerLive ? 'Agent Offline' : startingId === db.id ? 'Starting...' : 'Start'}
                                                                 </DropdownMenuItem>
                                                             )}
                                                             <DropdownMenuSeparator />

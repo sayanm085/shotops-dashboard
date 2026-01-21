@@ -208,6 +208,8 @@ export interface Server {
     os?: string;
     arch?: string;
     status: "pending" | "connected" | "disconnected" | "error" | "PENDING" | "CONNECTED" | "DISCONNECTED" | "UNCLAIMED";
+    // TRUTH: Real-time agent connection status from WebSocket Map
+    isLiveConnected?: boolean;
     agentVersion?: string;
     connectedAt?: string;
     lastSeenAt?: string;
